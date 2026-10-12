@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+/* ---------- L'en-tête regroupe toutes les méta-informations ---------- */
+<head>
+
+// Charset précise l'encodage des caractères
+/* - Le choix de l'UTF-8 est préconisé par le W3C pour tous les protocoles échangeant du texte sur internet - */
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+// Titre du document
+<title>Post-Op SVCP · Prototype</title>
+
+// Mettre le fichier de police à disposition du navigateur
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap" rel="stylesheet">
+
+// Style utilise la police fournie par le link (CSS)
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#EDF0F4; --panel:#FFFFFF; --ink:#0F1B2D; --muted:#5B6778; --line:#D5DBE4;
+  --brand:#0B4EA2; --brand-ink:#FFFFFF; --ok:#1E8E5A; --warn:#B57A00; --bad:#C8352B; --soft:#F5F7FA;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0C131D; --panel:#141E2C; --ink:#E6EBF2; --muted:#94A0B2; --line:#26344A;
+    --brand:#5B9BEF; --brand-ink:#0C131D; --ok:#3CC28A; --warn:#E5AE2E; --bad:#F0675C; --soft:#1A2638;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0C131D; --panel:#141E2C; --ink:#E6EBF2; --muted:#94A0B2; --line:#26344A;
+  --brand:#5B9BEF; --brand-ink:#0C131D; --ok:#3CC28A; --warn:#E5AE2E; --bad:#F0675C; --soft:#1A2638;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.5 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;font-variant-numeric:tabular-nums}
+h1,h2,h3{font-family:"IBM Plex Sans Condensed","IBM Plex Sans",system-ui,sans-serif;font-weight:600;margin:0;letter-spacing:.005em}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px 48px}
+header.top{background:var(--ink);color:#fff;padding:14px 0}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) header.top{background:#0A1019;border-bottom:1px solid var(--line)}}
+.top .wrap{display:flex;flex-wrap:wrap;gap:14px 24px;align-items:center;padding-bottom:0}
+.brand{display:flex;flex-direction:column;margin-right:auto}
+.brand h1{font-size:22px}
+.brand span{font-size:12.5px;color:#B8C3D4}
+.ctl{display:flex;flex-direction:column;gap:2px;font-size:12px;color:#B8C3D4}
+.ctl select{background:#1B2A42;color:#fff;border:1px solid #33476A;border-radius:6px;padding:6px 8px;min-width:150px}
+.notice{background:var(--soft);border:1px solid var(--line);border-left:4px solid var(--warn);padding:10px 14px;margin:16px 0 0;border-radius:6px;font-size:13.5px;color:var(--muted)}
+nav.tabs{display:flex;gap:2px;overflow-x:auto;margin:16px 0;border-bottom:1px solid var(--line)}
+nav.tabs button{background:none;border:0;padding:10px 14px;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap;font-weight:500}
+nav.tabs button[aria-current="true"]{color:var(--brand);border-bottom-color:var(--brand)}
+section.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:18px;margin-bottom:16px}
+section.panel h2{font-size:18px;margin-bottom:4px}
+section.panel .sub{color:var(--muted);font-size:13.5px;margin:0 0 14px}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);border:1px solid var(--line);border-radius:8px;background:var(--panel);margin-bottom:16px}
+.kpi{padding:14px 16px;border-right:1px solid var(--line)}
+.kpi:last-child{border-right:0}
+.kpi b{display:block;font:600 30px/1.1 "IBM Plex Sans Condensed",sans-serif}
+.kpi small{color:var(--muted);font-size:13px}
+.kpi em{display:block;font-style:normal;font-size:12.5px;margin-top:4px}
+.ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)}
+@media (max-width:820px){.kpis{grid-template-columns:repeat(2,1fr)}.kpi{border-bottom:1px solid var(--line)}}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:900px){.grid2{grid-template-columns:1fr}}
+.scroll{overflow-x:auto}
+svg text{fill:var(--muted);font-size:11px;font-family:"IBM Plex Sans",sans-serif}
+.heat{min-width:640px;display:grid;gap:3px;align-items:center}
+.heat .lbl{font-size:13px;padding-right:8px}
+.heat .c{height:26px;border-radius:3px}
+.heat .d{font-size:10.5px;color:var(--muted);text-align:center}
+.legend{display:flex;gap:10px;align-items:center;font-size:12px;color:var(--muted);margin-top:10px}
+.legend i{display:inline-block;width:28px;height:10px;border-radius:2px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:12.5px;background:var(--soft);position:sticky;top:0}
+td.n,th.n{text-align:right}
+.tag{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;border:1px solid var(--line);white-space:nowrap}
+.tag.a{color:var(--warn);border-color:var(--warn)} .tag.q{color:var(--ok);border-color:var(--ok)} .tag.x{color:var(--muted)}
+.tag.r{color:var(--bad);border-color:var(--bad)}
+.filters{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px}
+.filters label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:2px}
+select.f,input.f{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 8px;min-width:140px}
+.btn{background:var(--brand);color:var(--brand-ink);border:0;border-radius:6px;padding:7px 12px;cursor:pointer;font-weight:500}
+.btn.sec{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn[disabled],select[disabled],input[disabled]{opacity:.5;cursor:not-allowed}
+.par{display:grid;grid-template-columns:minmax(150px,1.2fr) 3fr 70px;gap:6px 10px;align-items:center;font-size:13px}
+.par .bar{height:14px;border-radius:3px;background:var(--brand)}
+.par .bar.nq{background:var(--warn)}
+.meter{height:10px;background:var(--soft);border-radius:999px;border:1px solid var(--line);overflow:hidden;position:relative}
+.meter i{display:block;height:100%}
+.dq{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.dq div.m b{font:600 26px/1.1 "IBM Plex Sans Condensed",sans-serif;display:block}
+.dq div.m small{color:var(--muted)}
+.chip{display:inline-block;padding:1px 9px;border-radius:4px;font-size:12px;font-weight:500}
+.chip.e{background:var(--brand);color:var(--brand-ink)} .chip.l{background:var(--soft);border:1px solid var(--line)} .chip.n{color:var(--muted)}
+tr.me td{background:var(--soft)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;z-index:5}
+.mut{color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{scroll-behavior:auto!important;transition:none!important}}
+</style>*/
+</head>
+
+/* ---------- Le corps de la page ---------- */
+
+<body>
+
+/* ---------- Les divisions sont des conteneurs de la page web ---------- */
+
+<div id="app"></div>
+<div id="toast" class="toast" hidden></div>
+
+/* ---------- Le script permet de gérer la logique de la page (JavaScript) ---------- */
+
+<script>
+/* ---------- Données fictives (générées de façon reproductible) ---------- */
+function rng(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const R=rng(20260921);
+const N=30, END=new Date(2026,8,20);
+const DATES=[...Array(N)].map((_,i)=>{const d=new Date(END);d.setDate(END.getDate()-(N-1-i));return d});
+const p2=n=>String(n).padStart(2,'0');
+const fd=d=>p2(d.getDate())+'/'+p2(d.getMonth()+1);
+const LINES=[
+  {id:'AMI-PNO',n:'Amiens – Paris-Nord',trains:38,base:.93},
+  {id:'AMI-LAO',n:'Amiens – Laon',trains:22,base:.91},
+  {id:'LAO-PNO',n:'Laon – Paris-Nord',trains:26,base:.90},
+  {id:'AMI-SQU',n:'Amiens – Saint-Quentin',trains:18,base:.94},
+  {id:'AMI-ROU',n:'Amiens – Rouen',trains:16,base:.92}
+];
+const CAUSES=['Infrastructure (voie, signalisation)','Matériel roulant','Conduite / agents','Aléas externes (météo, accident)','Comportement voyageurs','Travaux','Sûreté / malveillance','Gestion des circulations'];
+const CW=[.26,.2,.1,.12,.08,.1,.06,.08];
+const RESPS=['SVCP','SNCF Réseau','Région / AOM','Tiers / force majeure'];
+const CR=[1,0,0,3,3,1,3,0];
+const DESC=['Défaut d\'aiguillage','Panne de traction','Absence d\'agent','Chute d\'arbre sur la voie','Malaise voyageur','Limitation temporaire de vitesse','Câbles dérobés','Retard de correspondance'];
+const INC=[]; let seq=1;
+LINES.forEach(L=>DATES.forEach((d,i)=>{
+  const r=R(); const n=r<.35?0:(r<.75?1:(r<.92?2:3));
+  for(let k=0;k<n;k++){
+    let x=R(),ci=0,s=0; for(;ci<CW.length;ci++){s+=CW[ci]; if(x<=s)break} if(ci>=CW.length)ci=0;
+    const supp=R()<.15, imp=1+Math.floor(R()*3);
+    const retard=supp?0:6+Math.floor(R()*R()*70);
+    const age=N-1-i, pq=age>3?.93:(age>1?.6:.25);
+    const q=R()<pq;
+    INC.push({id:'INC-'+String(seq++).padStart(4,'0'),d:i,line:L.id,train:8000+Math.floor(R()*900),desc:DESC[ci],
+      retard,supp,imp,cause:q?ci:null,resp:q?CR[ci]:null,comment:'',statut:q?'Qualifié':'À qualifier',
+      hist:[{who:'Import SI opérations',when:d.toISOString(),txt:'Création de l\'incident'}]});
+  }
+}));
+/* agrégats journaliers calculés avant injection des anomalies */
+const D={};
+LINES.forEach(L=>{D[L.id]=DATES.map((_,i)=>{
+  const inc=INC.filter(x=>x.line===L.id&&x.d===i);
+  const supp=inc.reduce((a,x)=>a+(x.supp?x.imp:0),0);
+  const lateInc=inc.reduce((a,x)=>a+(!x.supp&&x.retard>=5?x.imp:0),0);
+  const base=Math.round(L.trains*(1-L.base)*.5*(.4+R()*1.2));
+  const late=Math.min(L.trains-supp,base+lateInc);
+  return {prog:L.trains,supp,late};
+})});
+/* anomalies injectées volontairement pour la démonstration */
+const base=INC.slice();
+for(let k=0;k<Math.round(base.length*.04);k++){
+  const o=base[Math.floor(R()*base.length)];
+  INC.push(Object.assign({},o,{id:'INC-'+String(seq++).padStart(4,'0'),dup:true,hist:[{who:'Import SI opérations',when:DATES[o.d].toISOString(),txt:'Création de l\'incident'}]}));
+}
+for(let k=0;k<Math.round(base.length*.03);k++){const o=INC[Math.floor(R()*INC.length)]; if(!o.dup){o.retard=0;o.supp=false}}
+for(let k=0;k<Math.round(base.length*.03);k++){const o=INC[Math.floor(R()*INC.length)]; if(!o.dup&&o.statut==='Qualifié'){o.cause=null;o.resp=null}}
+
+/* ---------- Rôles et droits (0 = pas d'accès, 1 = lecture, 2 = édition) ---------- */
+const ROLES=[
+ {id:'admin',n:'Direction Développement & Performance (admin)',p:{syn:2,post:2,qual:2,dq:2,ref:2,acc:2}},
+ {id:'dg',n:'Direction Générale',p:{syn:1,post:1,qual:0,dq:1,ref:1,acc:0}},
+ {id:'prod',n:'Production',p:{syn:1,post:1,qual:2,dq:1,ref:1,acc:0}},
+ {id:'sec',n:'Sécurité',p:{syn:1,post:1,qual:1,dq:0,ref:1,acc:0}},
+ {id:'rh',n:'Ressources humaines',p:{syn:1,post:0,qual:0,dq:0,ref:1,acc:0}},
+ {id:'fin',n:'Finances',p:{syn:1,post:1,qual:0,dq:0,ref:1,acc:0}},
+ {id:'ctr',n:'Contrats',p:{syn:1,post:1,qual:1,dq:1,ref:2,acc:0}},
+ {id:'mkt',n:'Marketing',p:{syn:1,post:0,qual:0,dq:0,ref:1,acc:0}},
+ {id:'rc',n:'Relation Clients',p:{syn:1,post:1,qual:1,dq:0,ref:1,acc:0}},
+ {id:'reg',n:'Région / SPL (partenaire)',p:{syn:1,post:1,qual:0,dq:0,ref:1,acc:0}}
+];
+const MODS=[['syn','Synthèse'],['post','Analyse post-opérationnelle'],['qual','Qualification des incidents'],['dq','Qualité des données'],['ref','Référentiel des indicateurs'],['acc','Accès et rôles']];
+const REF=[
+ ['REG-01','Régularité','Trains arrivés avec moins de 5 min de retard ÷ trains programmés','≥ 92 % (démo)','Quotidienne','SI opérations','Production'],
+ ['SUP-01','Taux de suppression','Trains supprimés ÷ trains programmés','≤ 2 % (démo)','Quotidienne','SI opérations','Production'],
+ ['RET-01','Minutes de retard perdues','Somme (retard × trains impactés) par cause','À caler DSP','Quotidienne','SI opérations','Performance'],
+ ['QUA-01','Taux de qualification des incidents','Incidents qualifiés sous 48 h ÷ incidents à qualifier','≥ 95 %','Quotidienne','Outil Post-Op','Performance'],
+ ['SEC-01','Événements de sécurité','Nombre d\'événements de sécurité déclarés','À caler DSP','Mensuelle','Base sécurité','Sécurité'],
+ ['RH-01','Taux d\'absentéisme conduite','Jours d\'absence ÷ jours théoriques (agents de conduite)','À caler DSP','Mensuelle','SIRH','RH'],
+ ['FIN-01','Bonus / malus contractuel estimé','Application du barème de la DSP aux résultats du mois','À caler DSP','Mensuelle','Contrat + Post-Op','Finances'],
+ ['CTR-01','Respect des engagements DSP','Engagements contractuels atteints ÷ engagements suivis','À caler DSP','Mensuelle','Référentiel contrats','Contrats'],
+ ['MKT-01','Fréquentation','Voyages validés (comptages et ventes)','À caler DSP','Mensuelle','Comptages, billettique','Marketing'],
+ ['CLI-01','Réclamations clients','Réclamations reçues pour 100 000 voyages','À caler DSP','Mensuelle','CRM','Relation Clients'],
+ ['CLI-02','Qualité de l\'information voyageurs','Trains avec information diffusée dans le délai cible','À caler DSP','Quotidienne','SI information voyageurs','Relation Clients'],
+ ['DQ-01','Complétude des données Post-Op','Incidents avec cause et responsabilité ÷ incidents','≥ 95 %','Quotidienne','Outil Post-Op','Performance']
+];
+
+/* ---------- État et persistance (localStorage, facultatif) ---------- */
+const S={role:'admin',tab:'syn',period:14,line:'all',fs:'all',fc:'all',focus:null,msg:''};
+const KEY='svcp-postop-demo-v1';
+try{const o=JSON.parse(localStorage.getItem(KEY)||'{}');INC.forEach(x=>{if(o[x.id])Object.assign(x,o[x.id])})}catch(e){}
+function persist(){try{const o={};INC.forEach(x=>{if(x.hist.length>1)o[x.id]={cause:x.cause,resp:x.resp,comment:x.comment,statut:x.statut,hist:x.hist}});localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}
+
+/* ---------- Utilitaires ---------- */
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pct=v=>(v*100).toFixed(1).replace('.',',')+' %';
+const role=()=>ROLES.find(r=>r.id===S.role);
+const perm=m=>role().p[m]||0;
+const lineName=id=>LINES.find(l=>l.id===id).n;
+const dupKeys={};INC.forEach(x=>{const k=x.line+x.d+x.train;dupKeys[k]=(dupKeys[k]||0)+1});
+function anomalies(x){
+  if(x.statut==='Écarté')return [];
+  const a=[];
+  if(!x.supp&&x.retard<5)a.push('Incohérent : ni retard de 5 min ou plus, ni suppression');
+  if(x.statut==='Qualifié'&&(x.cause===null||x.resp===null))a.push('Qualifié sans cause ou sans responsabilité');
+  if(x.dup||dupKeys[x.line+x.d+x.train]>1&&x.dup)a.push('Doublon probable');
+  return a;
+}
+const fInc=()=>INC.filter(x=>x.statut!=='Écarté'&&x.d>=N-S.period&&(S.line==='all'||x.line===S.line));
+const fLines=()=>LINES.filter(l=>S.line==='all'||l.id===S.line);
+function totals(){
+  let prog=0,supp=0,late=0;
+  fLines().forEach(l=>{for(let i=N-S.period;i<N;i++){const c=D[l.id][i];prog+=c.prog;supp+=c.supp;late+=c.late}});
+  return {prog,supp,late,reg:(prog-supp-late)/prog,sr:supp/prog};
+}
+function toast(t){const e=document.getElementById('toast');e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,2600)}
+function statutTag(s){return '<span class="tag '+(s==='Qualifié'?'q':s==='Écarté'?'x':'a')+'">'+s+'</span>'}
+
+/* ---------- Vues ---------- */
+function header(){
+  return `<header class="top"><div class="wrap">
+    <div class="brand"><h1>Post-Op · SNCF Voyageurs Cœur Picardie</h1><span>Prototype de reporting post-opérationnel</span></div>
+    <label class="ctl">Profil connecté<select data-bind="role">${ROLES.map(r=>`<option value="${r.id}" ${r.id===S.role?'selected':''}>${esc(r.n)}</option>`).join('')}</select></label>
+    <label class="ctl">Période<select data-bind="period">${[7,14,30].map(p=>`<option value="${p}" ${p===S.period?'selected':''}>${p} derniers jours</option>`).join('')}</select></label>
+    <label class="ctl">Ligne<select data-bind="line"><option value="all">Toutes les lignes</option>${LINES.map(l=>`<option value="${l.id}" ${l.id===S.line?'selected':''}>${esc(l.n)}</option>`).join('')}</select></label>
+  </div></header>
+  <div class="wrap"><p class="notice">Prototype : toutes les données (lignes, trains, incidents, objectifs) sont fictives. Le changement de profil simule les droits d'accès par direction. Les qualifications saisies sont conservées dans ce navigateur uniquement.</p>`;
+}
+function nav(){
+  return `<nav class="tabs" aria-label="Modules">${MODS.filter(m=>perm(m[0])>0).map(m=>`<button data-act="tab" data-v="${m[0]}" ${S.tab===m[0]?'aria-current="true"':''}>${m[1]}</button>`).join('')}</nav>`;
+}
+function kpis(){
+  const t=totals(), inc=fInc();
+  const nq=inc.filter(x=>x.statut==='À qualifier').length;
+  const tq=1-nq/Math.max(inc.length,1);
+  const regC=t.reg>=.92?'ok':(t.reg>=.9?'warn':'bad');
+  const late=inc.reduce((a,x)=>a+x.retard*x.imp,0);
+  return `<div class="kpis">
+   <div class="kpi"><small>Régularité</small><b class="${regC}">${pct(t.reg)}</b><em class="mut">Objectif démo : 92 %</em></div>
+   <div class="kpi"><small>Taux de suppression</small><b class="${t.sr<=.02?'ok':'bad'}">${pct(t.sr)}</b><em class="mut">${t.supp} trains sur ${t.prog}</em></div>
+   <div class="kpi"><small>Minutes de retard perdues</small><b>${late.toLocaleString('fr-FR')}</b><em class="mut">Sur ${inc.length} incidents</em></div>
+   <div class="kpi"><small>Incidents à qualifier</small><b class="${nq?'warn':'ok'}">${nq}</b><em class="mut">Cause ou responsabilité manquante</em></div>
+   <div class="kpi"><small>Taux de qualification</small><b class="${tq>=.95?'ok':'warn'}">${pct(tq)}</b><em class="mut">Cible : 95 %</em></div>
+  </div>`;
+}
+function trend(){
+  const W=700,H=210,pl=40,pr=14,pt=14,pb=28;
+  const pts=[];
+  for(let i=N-S.period;i<N;i++){let p=0,s=0,l=0;fLines().forEach(L=>{const c=D[L.id][i];p+=c.prog;s+=c.supp;l+=c.late});pts.push((p-s-l)/p)}
+  const lo=.8,hi=1, X=k=>pl+k*(W-pl-pr)/Math.max(pts.length-1,1), Y=v=>pt+(hi-Math.max(lo,v))/(hi-lo)*(H-pt-pb);
+  const path=pts.map((v,k)=>(k?'L':'M')+X(k).toFixed(1)+' '+Y(v).toFixed(1)).join(' ');
+  const grid=[.8,.85,.9,.95,1].map(v=>`<line x1="${pl}" x2="${W-pr}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${pl-6}" y="${Y(v)+4}" text-anchor="end">${Math.round(v*100)} %</text>`).join('');
+  const i0=N-S.period, mid=Math.floor(pts.length/2);
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Évolution de la régularité quotidienne" style="width:100%;height:auto">
+   ${grid}<line x1="${pl}" x2="${W-pr}" y1="${Y(.92)}" y2="${Y(.92)}" stroke="var(--ok)" stroke-dasharray="5 4"/>
+   <text x="${W-pr}" y="${Y(.92)-5}" text-anchor="end">Objectif 92 %</text>
+   <path d="${path}" fill="none" stroke="var(--brand)" stroke-width="2.4" stroke-linejoin="round"/>
+   ${pts.map((v,k)=>`<circle cx="${X(k)}" cy="${Y(v)}" r="2.6" fill="${v>=.92?'var(--ok)':'var(--bad)'}"><title>${fd(DATES[i0+k])} : ${pct(v)}</title></circle>`).join('')}
+   <text x="${pl}" y="${H-8}">${fd(DATES[i0])}</text><text x="${X(mid)}" y="${H-8}" text-anchor="middle">${fd(DATES[i0+mid])}</text><text x="${W-pr}" y="${H-8}" text-anchor="end">${fd(DATES[N-1])}</text>
+  </svg>`;
+}
+function heat(){
+  const n=S.period, ls=fLines();
+  let h=`<div class="scroll"><div class="heat" style="grid-template-columns:150px repeat(${n},1fr)"><span></span>`;
+  for(let i=N-n;i<N;i++)h+=`<span class="d">${p2(DATES[i].getDate())}</span>`;
+  ls.forEach(L=>{
+    h+=`<span class="lbl">${esc(L.n)}</span>`;
+    for(let i=N-n;i<N;i++){const c=D[L.id][i], v=(c.prog-c.supp-c.late)/c.prog, t=Math.min(1,Math.max(0,(v-.8)/.2));
+      h+=`<span class="c" style="background:hsl(${Math.round(t*130)} 62% 46%)" title="${esc(L.n)} · ${fd(DATES[i])} : ${pct(v)} (${c.supp} supprimés, ${c.late} en retard)"></span>`}
+  });
+  return h+`</div></div><div class="legend"><span>80 % et moins</span><i style="background:linear-gradient(90deg,hsl(0 62% 46%),hsl(65 62% 46%),hsl(130 62% 46%))"></i><span>100 %</span></div>`;
+}
+function vSyn(){
+  return kpis()+`<section class="panel"><h2>Régularité quotidienne</h2><p class="sub">Toutes lignes sélectionnées, comparée à l'objectif de démonstration.</p>${trend()}</section>
+  <section class="panel"><h2>Régularité par ligne et par jour</h2><p class="sub">Survolez une case pour lire le détail. Les zones rouges sont à expliquer dans l'analyse post-opérationnelle.</p>${heat()}</section>`;
+}
+function pareto(){
+  const inc=fInc(), m={}; let nq=0;
+  inc.forEach(x=>{const v=x.retard*x.imp; if(x.cause===null)nq+=v; else m[x.cause]=(m[x.cause]||0)+v});
+  const rows=Object.keys(m).map(k=>[CAUSES[k],m[k],false]).sort((a,b)=>b[1]-a[1]); rows.push(['Non qualifié',nq,true]);
+  const max=Math.max(...rows.map(r=>r[1]),1), tot=rows.reduce((a,r)=>a+r[1],0)||1;
+  return `<div class="par">${rows.map(r=>`<span>${esc(r[0])}</span><span><div class="bar ${r[2]?'nq':''}" style="width:${(r[1]/max*100).toFixed(1)}%"></div></span><span class="n" style="text-align:right">${r[1].toLocaleString('fr-FR')} min</span>`).join('')}</div>
+  <p class="sub" style="margin-top:12px">Minutes perdues = retard × nombre de trains impactés. Part non qualifiée : ${pct(nq/tot)}.</p>`;
+}
+function vPost(){
+  let inc=fInc().filter(x=>(S.fs==='all'||x.statut===S.fs)&&(S.fc==='all'||String(x.cause)===S.fc)).sort((a,b)=>b.d-a.d||a.id.localeCompare(b.id));
+  const total=inc.length; inc=inc.slice(0,60);
+  return `<section class="panel"><h2>Causes des pertes de temps</h2><p class="sub">Répartition des minutes de retard perdues par cause.</p>${pareto()}</section>
+  <section class="panel"><h2>Journal des incidents</h2><p class="sub">${total} incident(s) selon les filtres${total>60?' (60 premiers affichés)':''}.</p>
+   <div class="filters">
+    <label>Statut<select class="f" data-bind="fs">${['all','À qualifier','Qualifié'].map(v=>`<option value="${v}" ${S.fs===v?'selected':''}>${v==='all'?'Tous':v}</option>`).join('')}</select></label>
+    <label>Cause<select class="f" data-bind="fc"><option value="all">Toutes</option>${CAUSES.map((c,i)=>`<option value="${i}" ${S.fc===String(i)?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
+   </div>
+   <div class="scroll"><table><thead><tr><th>Date</th><th>Ligne</th><th>Train</th><th>Événement</th><th class="n">Retard</th><th>Cause</th><th>Responsabilité</th><th>Statut</th></tr></thead><tbody>
+   ${inc.map(x=>`<tr><td>${fd(DATES[x.d])}</td><td>${esc(lineName(x.line))}</td><td>${x.train}</td><td>${esc(x.desc)}</td><td class="n">${x.supp?'Supprimé':x.retard+' min'}</td><td>${x.cause===null?'<span class="mut">—</span>':esc(CAUSES[x.cause])}</td><td>${x.resp===null?'<span class="mut">—</span>':esc(RESPS[x.resp])}</td><td>${statutTag(x.statut)}</td></tr>`).join('')||'<tr><td colspan="8" class="mut">Aucun incident ne correspond à ces filtres.</td></tr>'}
+   </tbody></table></div></section>`;
+}
+function vQual(){
+  const ro=perm('qual')<2;
+  let list=fInc().filter(x=>x.statut==='À qualifier'||anomalies(x).length);
+  if(S.focus){const f=INC.find(x=>x.id===S.focus); if(f&&!list.includes(f))list.unshift(f); else if(f){list=[f].concat(list.filter(x=>x!==f))}}
+  list.sort((a,b)=>b.d-a.d); const total=list.length; list=list.slice(0,25);
+  const opt=(arr,sel)=>`<option value="">Choisir…</option>`+arr.map((c,i)=>`<option value="${i}" ${sel===i?'selected':''}>${esc(c)}</option>`).join('');
+  const journal=[]; INC.forEach(x=>x.hist.forEach(h=>{if(h.who!=='Import SI opérations')journal.push([h,x.id])}));
+  journal.sort((a,b)=>b[0].when.localeCompare(a[0].when));
+  return `<section class="panel"><h2>Incidents à qualifier ou à corriger</h2>
+   <p class="sub">Renseignez la cause et la responsabilité, puis enregistrez. Chaque modification est tracée. ${total} incident(s) à traiter${total>25?' (25 premiers affichés)':''}.</p>
+   ${ro?'<p class="notice">Votre profil est en lecture seule sur ce module.</p>':''}
+   <div class="scroll"><table><thead><tr><th>Incident</th><th>Événement</th><th>Contrôles</th><th>Cause</th><th>Responsabilité</th><th>Commentaire</th><th></th></tr></thead><tbody>
+   ${list.map(x=>{const an=anomalies(x);return `<tr data-row="${x.id}"><td><b>${x.id}</b><br><span class="mut">${fd(DATES[x.d])} · train ${x.train}<br>${esc(lineName(x.line))}</span></td>
+    <td>${esc(x.desc)}<br><span class="mut">${x.supp?'Supprimé':x.retard+' min'} · ${x.imp} train(s)</span></td>
+    <td>${an.length?an.map(a=>`<span class="tag r" style="display:block;margin-bottom:3px;white-space:normal">${esc(a)}</span>`).join(''):'<span class="tag a">À qualifier</span>'}</td>
+    <td><select class="f" data-f="cause" ${ro?'disabled':''}>${opt(CAUSES,x.cause)}</select></td>
+    <td><select class="f" data-f="resp" ${ro?'disabled':''}>${opt(RESPS,x.resp)}</select></td>
+    <td><input class="f" data-f="comment" value="${esc(x.comment)}" placeholder="Facultatif" ${ro?'disabled':''}></td>
+    <td style="white-space:nowrap"><button class="btn" data-act="save" data-id="${x.id}" ${ro?'disabled':''}>Enregistrer</button> <button class="btn sec" data-act="drop" data-id="${x.id}" ${ro?'disabled':''}>Écarter</button></td></tr>`}).join('')||'<tr><td colspan="7" class="mut">Tout est qualifié sur la période. Rien à traiter.</td></tr>'}
+   </tbody></table></div></section>
+  <section class="panel"><h2>Journal des modifications</h2><p class="sub">Traçabilité des corrections effectuées dans cet outil.</p>
+   ${journal.length?`<table><thead><tr><th>Date</th><th>Incident</th><th>Profil</th><th>Modification</th></tr></thead><tbody>${journal.slice(0,10).map(([h,id])=>`<tr><td>${new Date(h.when).toLocaleString('fr-FR')}</td><td>${id}</td><td>${esc(h.who)}</td><td>${esc(h.txt)}</td></tr>`).join('')}</tbody></table>`:'<p class="mut">Aucune modification pour l\'instant.</p>'}</section>`;
+}
+function vDq(){
+  const inc=fInc(), n=Math.max(inc.length,1);
+  const compl=inc.filter(x=>x.cause!==null&&x.resp!==null).length/n;
+  const coh=inc.filter(x=>x.supp||x.retard>=5).length/n;
+  const uni=1-inc.filter(x=>x.dup).length/n;
+  const old=inc.filter(x=>N-1-x.d>2), fra=old.length?old.filter(x=>x.statut==='Qualifié').length/old.length:1;
+  const tra=inc.filter(x=>x.hist.length>0).length/n;
+  const M=[['Complétude',compl,'Cause et responsabilité renseignées'],['Cohérence',coh,'Retard ou suppression cohérent avec l\'événement'],['Unicité',uni,'Absence de doublons'],['Fraîcheur',fra,'Incidents de plus de 48 h qualifiés'],['Traçabilité',tra,'Incidents avec historique de création et de correction']];
+  const meter=v=>`<div class="meter"><i style="width:${(v*100).toFixed(1)}%;background:${v>=.95?'var(--ok)':(v>=.85?'var(--warn)':'var(--bad)')}"></i></div>`;
+  const an=[];inc.forEach(x=>anomalies(x).forEach(a=>an.push([x,a])));
+  const byLine=fLines().map(L=>{const s=inc.filter(x=>x.line===L.id);return [L.n,s.length?s.filter(x=>x.cause!==null&&x.resp!==null).length/s.length:1]});
+  return `<section class="panel"><h2>Qualité des données Post-Op</h2><p class="sub">Seuil cible de démonstration : 95 %.</p>
+   <div class="dq">${M.map(m=>`<div class="m"><b class="${m[1]>=.95?'ok':(m[1]>=.85?'warn':'bad')}">${pct(m[1])}</b><small>${m[0]}</small>${meter(m[1])}<small style="display:block;margin-top:4px">${m[2]}</small></div>`).join('')}</div></section>
+  <section class="panel"><h2>Complétude par ligne</h2><div class="par" style="margin-top:10px">${byLine.map(b=>`<span>${esc(b[0])}</span>${meter(b[1])}<span style="text-align:right">${pct(b[1])}</span>`).join('')}</div></section>
+  <section class="panel"><h2>Anomalies détectées</h2><p class="sub">${an.length} anomalie(s) sur la période. Chaque anomalie renvoie vers l'écran de qualification pour correction.</p>
+   <div class="scroll"><table><thead><tr><th>Incident</th><th>Ligne</th><th>Anomalie</th><th></th></tr></thead><tbody>
+   ${an.slice(0,20).map(([x,a])=>`<tr><td>${x.id}<br><span class="mut">${fd(DATES[x.d])}</span></td><td>${esc(lineName(x.line))}</td><td>${esc(a)}</td><td>${perm('qual')>0?`<button class="btn sec" data-act="open" data-id="${x.id}">Ouvrir</button>`:''}</td></tr>`).join('')||'<tr><td colspan="4" class="mut">Aucune anomalie détectée.</td></tr>'}
+   </tbody></table></div></section>`;
+}
+function vRef(){
+  return `<section class="panel"><h2>Référentiel des indicateurs</h2><p class="sub">Un indicateur = une définition, une règle de calcul, une source et un responsable. Les objectifs marqués « À caler DSP » sont à renseigner à partir du contrat.</p>
+  <div class="scroll"><table><thead><tr><th>Code</th><th>Indicateur</th><th>Règle de calcul</th><th>Objectif</th><th>Périodicité</th><th>Source</th><th>Responsable</th></tr></thead><tbody>
+  ${REF.map(r=>`<tr><td><b>${r[0]}</b></td><td>${esc(r[1])}</td><td>${esc(r[2])}</td><td>${esc(r[3])}</td><td>${r[4]}</td><td>${esc(r[5])}</td><td>${esc(r[6])}</td></tr>`).join('')}
+  </tbody></table></div></section>`;
+}
+function vAcc(){
+  const c=v=>v===2?'<span class="chip e">Édition</span>':v===1?'<span class="chip l">Lecture</span>':'<span class="chip n">Aucun</span>';
+  return `<section class="panel"><h2>Accès et rôles</h2><p class="sub">Matrice de droits par direction. Le profil administrateur (Direction Développement & Performance) voit et modifie tout.</p>
+  <div class="scroll"><table><thead><tr><th>Profil</th>${MODS.map(m=>`<th>${m[1]}</th>`).join('')}</tr></thead><tbody>
+  ${ROLES.map(r=>`<tr class="${r.id===S.role?'me':''}"><td><b>${esc(r.n)}</b></td>${MODS.map(m=>`<td>${c(r.p[m[0]])}</td>`).join('')}</tr>`).join('')}
+  </tbody></table></div></section>`;
+}
+function render(){
+  if(!perm(S.tab)){S.tab=MODS.find(m=>perm(m[0]))[0]}
+  const v={syn:vSyn,post:vPost,qual:vQual,dq:vDq,ref:vRef,acc:vAcc}[S.tab];
+  document.getElementById('app').innerHTML=header()+nav()+v()+'</div>';
+}
+
+/* ---------- Événements ---------- */
+document.addEventListener('change',e=>{
+  const b=e.target.getAttribute&&e.target.getAttribute('data-bind'); if(!b)return;
+  const v=e.target.value; S[b]=(b==='period')?parseInt(v,10):v; if(b==='role')S.focus=null; render();
+});
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-act]'); if(!el)return;
+  const act=el.dataset.act, id=el.dataset.id;
+  if(act==='tab'){S.tab=el.dataset.v;S.focus=null;render();return}
+  if(act==='open'){S.tab='qual';S.focus=id;render();return}
+  const x=INC.find(i=>i.id===id); if(!x||perm('qual')<2)return;
+  const row=el.closest('tr'), get=f=>row.querySelector('[data-f="'+f+'"]').value;
+  const now=new Date().toISOString(), who=role().n;
+  if(act==='save'){
+    const c=get('cause'), r=get('resp');
+    if(c===''||r===''){toast('Choisissez une cause et une responsabilité avant d\'enregistrer.');return}
+    x.cause=parseInt(c,10); x.resp=parseInt(r,10); x.comment=get('comment'); x.statut='Qualifié';
+    x.hist.push({who,when:now,txt:'Qualifié : '+CAUSES[x.cause]+' / '+RESPS[x.resp]});
+    persist(); toast('Incident '+id+' enregistré.'); render();
+  }
+  if(act==='drop'){
+    x.statut='Écarté'; x.hist.push({who,when:now,txt:'Écarté du périmètre d\'analyse'});
+    persist(); toast('Incident '+id+' écarté.'); render();
+  }
+});
+render();
+</script>
+</body>
+</html>

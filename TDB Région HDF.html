@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tableau de bord TER — Picardie</title>
+<meta property="og:title" content="Tableau de bord TER — Picardie">
+<meta property="og:description" content="Régularité, suppressions et fréquentation des lignes TER Picardie — données mensuelles 2025">
+<meta property="og:image" content="https://sncf.sharepoint.com/sites/ServeurEquipeMOBGrpO365/Liens%20HTML/R%C3%A9gion%20HDF.png">
+<meta property="og:type" content="website">
+<script src="https://sncf.sharepoint.com/sites/ServeurEquipeMOBGrpO365/Liens%20HTML/echarts.min.js"></script>
+<style>
+  :root{
+    --bg:#0d1420; --card:#16202f; --card2:#1c2939; --txt:#e8eef6;
+    --muted:#8fa3b8; --accent:#00b4d8; --green:#2ecc71; --orange:#f39c12; --red:#e74c3c;
+    --border:#26374c;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Arial,sans-serif}
+  body{background:var(--bg);color:var(--txt);padding:24px}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+  h1{font-size:22px}
+  h1 span{color:var(--accent)}
+  .sub{color:var(--muted);font-size:13px;margin-top:4px}
+  .filters{display:flex;gap:10px}
+  select{background:var(--card2);color:var(--txt);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-bottom:20px}
+  .kpi{background:linear-gradient(135deg,var(--card),var(--card2));border:1px solid var(--border);border-radius:14px;padding:18px}
+  .kpi .label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .kpi .value{font-size:32px;font-weight:700;margin:6px 0 2px}
+  .kpi .delta{font-size:12px}
+  .up{color:var(--green)} .down{color:var(--red)}
+  .grid{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px}
+  .card h2{font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+  .chart{width:100%;height:320px}
+  .full{grid-column:1/-1}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)}
+  th{color:var(--muted);font-weight:600}
+  tr:hover td{background:var(--card2)}
+  .badge{padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+  .b-good{background:rgba(46,204,113,.15);color:var(--green)}
+  .b-mid{background:rgba(243,156,18,.15);color:var(--orange)}
+  .b-bad{background:rgba(231,76,60,.15);color:var(--red)}
+  footer{margin-top:16px;color:var(--muted);font-size:11px;text-align:center}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🚆 Tableau de bord TER <span>Picardie</span></h1>
+    <div class="sub">Régularité · Suppressions · Fréquentation — Données mensuelles 2025</div>
+  </div>
+  <div class="filters">
+    <select id="selLigne" onchange="updateLigne()">
+      <option value="all">Toutes les lignes</option>
+    </select>
+  </div>
+</header>
+
+<section class="kpis">
+  <div class="kpi"><div class="label">Régularité (à l'arrivée)</div><div class="value" id="kpiReg">—</div><div class="delta up" id="kpiRegDelta">—</div></div>
+  <div class="kpi"><div class="label">Trains supprimés</div><div class="value" id="kpiSupp">—</div><div class="delta up" id="kpiSuppDelta">—</div></div>
+  <div class="kpi"><div class="label">Voyageurs (milliers/mois)</div><div class="value" id="kpiFreq">—</div><div class="delta up" id="kpiFreqDelta">—</div></div>
+  <div class="kpi"><div class="label">Trains programmés/mois</div><div class="value" id="kpiProg">—</div><div class="delta" style="color:var(--muted)" id="kpiProgDelta">—</div></div>
+</section>
+
+<div class="grid">
+  <div class="card"><h2>Régularité mensuelle (% de trains à l'heure à l'arrivée)</h2><div id="chartReg" class="chart"></div></div>
+  <div class="card"><h2>Objectif de régularité</h2><div id="chartGauge" class="chart"></div></div>
+  <div class="card"><h2>Causes des retards (voyageurs impactés)</h2><div id="chartCauses" class="chart"></div></div>
+  <div class="card"><h2>Fréquentation par ligne (voyageurs/mois)</h2><div id="chartFreq" class="chart"></div></div>
+  <div class="card full"><h2>Détail par ligne TER</h2>
+    <table>
+      <thead><tr><th>Ligne</th><th>Régularité</th><th>Suppressions</th><th>Voyageurs/mois</th><th>Tendance</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<footer>Données de démonstration inspirées des publications Hauts-de-France Mobilités et de l'open data SNCF — à remplacer par vos données SharePoint/JSON.</footer>
+
+<script>
+/* ================= DONNÉES (à remplacer par un fetch JSON) ================= */
+const MOIS = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep'];
+const LIGNES = [
+  {nom:"Paris – Amiens",        reg:[92.1,91.4,90.2,93.0,92.6,91.8,89.5,90.1,92.4], supp:[1.1,1.3,2.8,1.0,0.9,1.2,1.8,1.5,1.0], freq:[610,585,640,620,655,600,520,540,630]},
+  {nom:"Paris – Laon",          reg:[90.8,89.2,86.5,91.0,90.4,89.9,88.0,88.6,90.2], supp:[1.4,1.6,3.2,1.2,1.1,1.5,2.1,1.9,1.3], freq:[300,290,315,305,320,285,240,250,310]},
+  {nom:"Paris – Saint-Quentin", reg:[91.5,90.7,88.9,92.3,91.7,91.0,89.2,89.8,91.6], supp:[1.2,1.4,2.9,1.1,1.0,1.3,1.9,1.6,1.1], freq:[280,270,295,290,305,275,235,245,300]},
+  {nom:"Amiens – Abbeville",    reg:[93.2,92.8,92.0,93.6,93.4,92.9,91.8,92.2,93.1], supp:[0.8,0.9,1.6,0.7,0.7,0.9,1.2,1.1,0.8], freq:[150,145,155,152,158,140,120,128,155]},
+  {nom:"Amiens – Rouen",        reg:[91.0,90.2,88.4,91.6,91.2,90.5,89.0,89.4,90.9], supp:[1.3,1.5,3.0,1.2,1.1,1.4,2.0,1.7,1.2], freq:[120,115,125,122,128,110,95,100,126]},
+];
+const CAUSES = [
+  {value:32,name:'Infrastructure (voie, signalisation)'},
+  {value:24,name:'Aléas météo / feuilles mortes'},
+  {value:18,name:'Incident matériel roulant'},
+  {value:14,name:'Grèves / mouvements sociaux'},
+  {value:12,name:'Cause voyageur / intrusion'},
+];
+const OBJECTIF = 95;
+
+/* ================= HELPERS ================= */
+const avg = a => a.reduce((s,v)=>s+v,0)/a.length;
+const fmt = (v,d=1) => v.toFixed(d).replace('.',',');
+
+/* ================= KPIs ================= */
+function updateKPIs(l){
+  const lignes = l==='all' ? LIGNES : LIGNES.filter(x=>x.nom===l);
+  const reg = avg(lignes.map(x=>avg(x.reg)));
+  const supp = avg(lignes.map(x=>avg(x.supp)));
+  const freq = lignes.reduce((s,x)=>s+x.freq[8],0);
+  const prog = 4250; // illustrative
+  document.getElementById('kpiReg').textContent = fmt(reg)+' %';
+  document.getElementById('kpiRegDelta').textContent = '▲ +2,3 pts vs 2024';
+  document.getElementById('kpiSupp').textContent = fmt(supp)+' %';
+  document.getElementById('kpiSuppDelta').textContent = '▼ −0,4 pt vs 2024';
+  document.getElementById('kpiFreq').textContent = freq.toLocaleString('fr-FR');
+  document.getElementById('kpiFreqDelta').textContent = '▲ +16 % vs 2024';
+  document.getElementById('kpiProg').textContent = prog.toLocaleString('fr-FR');
+  document.getElementById('kpiProgDelta').textContent = 'axe Paris-Nord Picardie';
+}
+
+/* ================= GRAPHIQUES ================= */
+const base = {textStyle:{color:'#8fa3b8'}, tooltip:{trigger:'axis'}};
+const chartReg = echarts.init(document.getElementById('chartReg'));
+const chartGauge = echarts.init(document.getElementById('chartGauge'));
+const chartCauses = echarts.init(document.getElementById('chartCauses'));
+const chartFreq = echarts.init(document.getElementById('chartFreq'));
+
+function renderAll(l){
+  const lignes = l==='all' ? LIGNES : LIGNES.filter(x=>x.nom===l);
+  // Régularité
+  const series = lignes.map((x,i)=>({
+    name:x.nom, type:'line', smooth:true, data:x.reg,
+    lineStyle:{width:l==='all'?2:3}, symbolSize:6,
+    emphasis:{focus:'series'}
+  }));
+  if(l==='all'){
+    const moy = MOIS.map((_,m)=> avg(LIGNES.map(x=>x.reg[m])));
+    series.push({name:'Moyenne Picardie',type:'line',smooth:true,data:moy,lineStyle:{width:4,color:'#00b4d8'},itemStyle:{color:'#00b4d8'},symbolSize:8});
+  }
+  chartReg.setOption({...base,
+    legend:{textStyle:{color:'#8fa3b8'},top:0},
+    grid:{left:40,right:16,top:40,bottom:28},
+    xAxis:{type:'category',data:MOIS,axisLine:{lineStyle:{color:'#3a4d63'}}},
+    yAxis:{type:'value',min:80,max:100,axisLabel:{formatter:'{value} %'},splitLine:{lineStyle:{color:'#26374c'}}},
+    series
+  }, true);
+  // Jauge
+  const regGlobale = avg(lignes.map(x=>avg(x.reg)));
+  chartGauge.setOption({
+    series:[{type:'gauge',startAngle:210,endAngle:-30,min:70,max:100,
+      progress:{show:true,width:14,itemStyle:{color:'#00b4d8'}},
+      axisLine:{lineStyle:{width:14,color:[[1,'#26374c']]}},
+      axisTick:{show:false},splitLine:{show:false},axisLabel:{show:false},
+      pointer:{show:false},anchor:{show:false},
+      title:{color:'#8fa3b8',fontSize:14,offsetCenter:[0,'65%']},
+      detail:{color:'#e8eef6',fontSize:36,formatter:v=>v.toFixed(1).replace('.',',')+' %',offsetCenter:[0,'5%']},
+      data:[{value:regGlobale,name:"Objectif : 95 %"}]
+    }]
+  }, true);
+  // Causes
+  chartCauses.setOption({
+    tooltip:{trigger:'item',formatter:'{b}<br/>{c} % ({d} %)'},
+    legend:{textStyle:{color:'#8fa3b8'},bottom:0,itemWidth:12,itemHeight:12},
+    series:[{type:'pie',radius:['45%','70%'],center:['50%','42%'],
+      itemStyle:{borderColor:'#16202f',borderWidth:2},
+      label:{show:false},
+      data:CAUSES,
+      color:['#00b4d8','#2ecc71','#f39c12','#e74c3c','#9b59b6']
+    }]
+  }, true);
+  // Fréquentation
+  const serieF = lignes.length===1
+    ? [{name:lignes[0].nom,type:'bar',data:lignes[0].freq,itemStyle:{color:'#00b4d8',borderRadius:[6,6,0,0]}}]
+    : lignes.map((x,i)=>({name:x.nom,type:'bar',data:[x.freq[8]],itemStyle:{borderRadius:[6,6,0,0]}}));
+  chartFreq.setOption({
+    ...base,
+    legend:{textStyle:{color:'#8fa3b8'},top:0},
+    grid:{left:60,right:16,top:40,bottom:28},
+    xAxis:{type:'category',data: lignes.length===1 ? MOIS : lignes.map(x=>x.nom),
+      axisLabel:{rotate:lignes.length===1?0:18,interval:0},axisLine:{lineStyle:{color:'#3a4d63'}}},
+    yAxis:{type:'value',splitLine:{lineStyle:{color:'#26374c'}}},
+    series: serieF,
+    color:['#00b4d8','#2ecc71','#f39c12','#e74c3c','#9b59b6']
+  }, true);
+  // Table
+  const tb = document.getElementById('tbody');
+  tb.innerHTML = lignes.map(x=>{
+    const r = avg(x.reg), s = avg(x.supp), f = x.freq[8];
+    const badge = r>=92 ? 'b-good' : r>=89 ? 'b-mid' : 'b-bad';
+    const txt = r>=92 ? 'Bon' : r>=89 ? 'À surveiller' : 'Critique';
+    return `<tr><td>${x.nom}</td><td>${fmt(r)} %</td><td>${fmt(s)} %</td>
+      <td>${f.toLocaleString('fr-FR')}</td><td><span class="badge ${badge}">${txt}</span></td></tr>`;
+  }).join('');
+}
+
+/* ================= FILTRE ================= */
+const sel = document.getElementById('selLigne');
+LIGNES.forEach(x=>{const o=document.createElement('option');o.value=x.nom;o.textContent=x.nom;sel.appendChild(o);});
+function updateLigne(){const l=sel.value;updateKPIs(l);renderAll(l);}
+
+updateKPIs('all');
+renderAll('all');
+window.addEventListener('resize',()=>[chartReg,chartGauge,chartCauses,chartFreq].forEach(c=>c.resize()));
+</script>
+</body>
+</html>
